@@ -1,0 +1,16 @@
+[
+{
+  "modid": "statspuller",
+  "name": "Stats Puller",
+  "description": "Pulls stats on server. Legaleese: This mod or it's creator are not affiliated with any of the servers it pulls stats on or Mojang. (That SHOULD be sufficient enough to cover my ass..)",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["2uj"],
+  "credits": "Hypixel4j, Hypixel",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
