@@ -29,7 +29,17 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class StatsPlayerListGui extends GuiPlayerTabOverlay {
-    private static final Ordering<NetworkPlayerInfo> SORTER = Ordering.from(new PlayerComparator());
+    private static final Ordering<NetworkPlayerInfo> SORTER = Ordering.from(Comparator
+            .comparing((NetworkPlayerInfo it) -> it.getGameType() != WorldSettings.GameType.SPECTATOR)
+            .thenComparing((NetworkPlayerInfo it1, NetworkPlayerInfo it2) -> {
+                ScorePlayerTeam team1 = it1.getPlayerTeam();
+                ScorePlayerTeam team2 = it2.getPlayerTeam();
+                if (team1 == null && team2 != null) return -1;
+                if (team1 != null && team2 == null) return 1;
+                if (team2 == null && team1 == null) return 0;
+                return team1.getRegisteredName().compareTo(team2.getRegisteredName());
+            })
+            .thenComparing(it -> it.getGameProfile().getName()));
     private final Minecraft mc;
     private final GuiIngame guiIngame;
     private IChatComponent footer;
@@ -46,17 +56,10 @@ public class StatsPlayerListGui extends GuiPlayerTabOverlay {
     }
 
     @Override
-    public void updatePlayerList(boolean updatePlayerList) {
-        if (updatePlayerList && !this.isBeingRendered) {
-            this.lastTimeOpened = Minecraft.getSystemTime();
-        }
-
-        this.isBeingRendered = updatePlayerList;
-    }
-
-    @Override
     public void renderPlayerlist(int screenWidth, Scoreboard scoreboard, ScoreObjective objective) {
         List<NetworkPlayerInfo> playerList = SORTER.sortedCopy(mc.thePlayer.sendQueue.getPlayerInfoMap());
+        boolean detailed = mc.thePlayer.isSneaking();
+
         int maxNameWidth = 0;
 
         List<Integer> maxStatWidth = new ArrayList<>(playerList.size());
@@ -72,7 +75,7 @@ public class StatsPlayerListGui extends GuiPlayerTabOverlay {
 
 
             //Work with stat width
-            List<String> strings = getPlayerInfo(playerInfo);
+            List<String> strings = getPlayerInfo(playerInfo, detailed);
             //Work with objective width
             if (objective != null) {
                 strings.add(0, scoreboard.getValueFromObjective(playerInfo.getGameProfile().getName(), objective).getScorePoints() + "");
@@ -229,63 +232,40 @@ public class StatsPlayerListGui extends GuiPlayerTabOverlay {
 
     }
 
-    @Override
-    public void setFooter(IChatComponent footer) {
-        this.footer = footer;
-    }
-
-    @Override
-    public void setHeader(IChatComponent header) {
-        this.header = header;
-    }
-
-    @Override
-    public void func_181030_a() {
-        header = null;
-        footer = null;
-    }
-
-    @SideOnly(Side.CLIENT)
-    static class PlayerComparator implements Comparator<NetworkPlayerInfo> {
-        private PlayerComparator() {
-        }
-
-        public int compare(NetworkPlayerInfo p_compare_1_, NetworkPlayerInfo p_compare_2_) {
-            ScorePlayerTeam lvt_3_1_ = p_compare_1_.getPlayerTeam();
-            ScorePlayerTeam lvt_4_1_ = p_compare_2_.getPlayerTeam();
-            return ComparisonChain.start().compareTrueFirst(p_compare_1_.getGameType() != WorldSettings.GameType.SPECTATOR, p_compare_2_.getGameType() != WorldSettings.GameType.SPECTATOR).compare(lvt_3_1_ != null ? lvt_3_1_.getRegisteredName() : "", lvt_4_1_ != null ? lvt_4_1_.getRegisteredName() : "").compare(p_compare_1_.getGameProfile().getName(), p_compare_2_.getGameProfile().getName()).result();
-        }
-    }
-
     public void prerender(List<NetworkPlayerInfo> players) {
         Set<UUID> uuids = new LinkedHashSet<>();
 
         for (NetworkPlayerInfo info : players) {
             UUID playerUUID = info.getGameProfile().getId();
-            if (playerUUID != null) uuids.add(playerUUID);
+            /* if (playerUUID != null) */ uuids.add(playerUUID);
         }
 
         Server server = StatsPuller.getServer();
+        if (server == null) return;
 
         friendGroups.clear();
         for (UUID playerUUID : uuids) {
-            Set<UUID> friends = server.getFriends(playerUUID, false);
-            Set<UUID> onlineFriends = new TreeSet<>();
+            Set<UUID> allFriends = server.getFriends(playerUUID, false);
+
+            Set<UUID> friendGroup = new TreeSet<>();
 
             for (UUID nextPlayerUUID : uuids) {
-                if (friends.contains(nextPlayerUUID)) onlineFriends.add(nextPlayerUUID);
+                if (allFriends.contains(nextPlayerUUID)) friendGroup.add(nextPlayerUUID);
             }
 
-            if (onlineFriends.size() > 1) friendGroups.add(onlineFriends);
+            if (friendGroup.size() > 1) friendGroups.add(friendGroup);
         }
 
     }
 
-    public List<String> getPlayerInfo(NetworkPlayerInfo player) {
+    public List<String> getPlayerInfo(NetworkPlayerInfo player, boolean detailed) {
         List<String> list = new LinkedList<>();
 
         Server server = StatsPuller.getServer();
-        if (server == null) return list;
+        if (server == null) {
+            list.add("Invalid  Server");
+            return list;
+        }
 
         UUID uuid = player.getGameProfile().getId();
 
@@ -299,7 +279,13 @@ public class StatsPlayerListGui extends GuiPlayerTabOverlay {
         }
 
         //Nickname
-        if (uuid == null || !server.isValid(uuid, false)) {
+
+        //This isn't inline as it sends off a request
+        boolean isValid = server.isValid(uuid, false);
+        if (uuid != null && !server.isFetched(uuid)) {
+            list.add("?");
+            return list;
+        } else if (uuid == null || !isValid) {
             list.add("+");
             return list;
         }
@@ -307,13 +293,17 @@ public class StatsPlayerListGui extends GuiPlayerTabOverlay {
         //Guild
         String guildId = server.getGuildId(uuid, false);
 
-        if (uuids.stream().anyMatch(otherPlayer -> {
+        if (!server.isGuildIDFetched(uuid)) {
+            list.add("?");
+        } else if (detailed || uuids.stream().anyMatch(otherPlayer -> {
             if (otherPlayer == uuid) return false;
 
             String otherGuildId = server.getGuildId(otherPlayer, false);
             return otherGuildId != null && otherGuildId.equals(guildId);
         })) {
-            list.add(server.getGuildName(guildId, false));
+            String guildName = server.getGuildName(guildId, detailed, false);
+            if (!server.isGuildNameFetched(guildId)) list.add("?");
+            else list.add(guildName == null ? "" : guildName);
         } else list.add("");
 
         //Minigame-specific
@@ -324,8 +314,11 @@ public class StatsPlayerListGui extends GuiPlayerTabOverlay {
         double deaths = backend.getDeaths(uuid, false);
         if (deaths == 0) deaths = 1;
 
-        list.add(formatKdr(Math.round((backend.getKills(uuid, false) / deaths) * 100) / 100d));
-        list.add(backend.getExtra(uuid, false));
+        double kills = backend.getKills(uuid, false);
+
+        double kdr = Math.round((kills / deaths) * 100) / 100d;
+        list.add(kdrColor(kdr) + (detailed ? (int) deaths + " / " + (int) kills : kdr));
+        list.add(backend.getExtra(uuid, detailed, false));
 
         //Friends
         //friendGroups is a list of friend groups. Each friend group is a list of friend
@@ -338,7 +331,18 @@ public class StatsPlayerListGui extends GuiPlayerTabOverlay {
         return list;
     }
 
-    public String formatKdr(double kdr) {
+    //No changes, they just update private variables
+    @Override
+    public void setFooter(IChatComponent p_setFooter_1_) {
+        super.setFooter(p_setFooter_1_);
+    }
+
+    @Override
+    public void setHeader(IChatComponent p_setHeader_1_) {
+        super.setHeader(p_setHeader_1_);
+    }
+
+    public String kdrColor(double kdr) {
         String str = "§";
 
         if (kdr <= 0.5) str += "7";
@@ -348,6 +352,6 @@ public class StatsPlayerListGui extends GuiPlayerTabOverlay {
         else if (kdr <= 8) str += "c";
         else str += "4";
 
-        return str + kdr;
+        return str;
     }
 }

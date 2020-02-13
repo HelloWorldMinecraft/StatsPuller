@@ -12,8 +12,8 @@ public interface Backend {
     long getDeaths(@Nonnull UUID uuid, boolean instant);
     long getWins(@Nonnull UUID uuid, boolean instant);
 
-    String getExtra(@Nonnull UUID uuid, boolean instant);
-    String getDump(@Nonnull UUID uuid, boolean instant);
+    String getExtra(@Nonnull UUID uuid, boolean detailed, boolean instant);
+    String getDump(@Nonnull UUID uuid, boolean detailed, boolean instant);
 
     String getName();
 }

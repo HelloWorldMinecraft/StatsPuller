@@ -46,7 +46,7 @@ public class DumpCommand implements ICommand {
                 UUID playerUUID = MojangAPI.getUUID(playerName);
                 sender.addChatMessage(new ChatComponentText("Player UUID: " + playerUUID.toString()));
                 sender.addChatMessage(new ChatComponentText(server.getGenericDump(playerUUID, true)));
-                sender.addChatMessage(new ChatComponentText(backend.getDump(playerUUID, true)));
+                sender.addChatMessage(new ChatComponentText(backend.getDump(playerUUID, true, true)));
             } catch (Exception exception) {
                 exception.printStackTrace();
                 sender.addChatMessage(new ChatComponentText("Player UUID is invalid; breaking"));

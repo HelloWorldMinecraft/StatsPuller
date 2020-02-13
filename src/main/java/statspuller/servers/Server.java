@@ -35,7 +35,10 @@ public abstract class Server {
     public abstract void clearCache();
 
     public abstract String getGuildId(@Nonnull UUID uuid, boolean instant);
-    public abstract String getGuildName(@Nonnull String id, boolean instant);
+    public abstract boolean isGuildIDFetched(UUID uuid);
+
+    public abstract String getGuildName(@Nonnull String id, boolean detailed, boolean instant);
+    public abstract boolean isGuildNameFetched(String id);
 
     public abstract Set<UUID> getFriends(@Nonnull UUID uuid, boolean instant);
     public abstract void getPossibleIncognitos(@Nonnull Set<UUID> uuids, Consumer<String> consumer);
@@ -44,6 +47,7 @@ public abstract class Server {
 
     public abstract String getGenericDump(UUID uuid, boolean instant);
     public abstract boolean isValid(UUID uuid, boolean instant);
+    public abstract boolean isFetched(UUID uuid);
 
     public abstract void setKey(@Nonnull String string);
     public abstract boolean isReady();

@@ -46,17 +46,17 @@ public class HypixelBackend<T> implements Backend {
     }
 
     @Override
-    public final String getDump(@Nonnull UUID uuid, boolean instant) {
+    public final String getDump(@Nonnull UUID uuid, boolean detailed, boolean instant) {
         T game = getGame(uuid, instant);
         if (game == null) return null;
         return getDump(game);
     }
 
     @Override
-    public final String getExtra(@Nonnull UUID uuid, boolean instant) {
+    public final String getExtra(@Nonnull UUID uuid, boolean detailed, boolean instant) {
         T game = getGame(uuid, instant);
         if (game == null) return null;
-        return getExtra(game);
+        return getExtra(game, detailed);
     }
 
     public long getKills(@Nonnull T game) {
@@ -75,7 +75,7 @@ public class HypixelBackend<T> implements Backend {
                 "Wins: " + getWins(game) + "\n";
     }
 
-    public String getExtra(@Nonnull T game) {
+    public String getExtra(@Nonnull T game, boolean detailed) {
         return "";
     }
 

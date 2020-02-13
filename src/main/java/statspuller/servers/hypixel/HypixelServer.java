@@ -155,16 +155,31 @@ public class HypixelServer extends Server {
     }
 
     @Override
+    public boolean isFetched(UUID uuid) {
+        return players.containsKey(uuid);
+    }
+
+    @Override
     public String getGuildId(@Nonnull UUID uuid, boolean instant) {
         return getGuildID(uuid, instant);
     }
 
     @Override
-    public String getGuildName(@Nonnull String id, boolean instant) {
-        Guild guild = getGuild(id, instant);
-        if (guild == null) return "UNLOADED";
+    public boolean isGuildIDFetched(UUID uuid) {
+        return guildIds.containsKey(uuid);
+    }
 
-        return guild.getTag();
+    @Override
+    public String getGuildName(@Nonnull String id, boolean detailed, boolean instant) {
+        Guild guild = getGuild(id, instant);
+        if (guild == null) return null;
+
+        return detailed ? guild.getName() : guild.getTag();
+    }
+
+    @Override
+    public boolean isGuildNameFetched(String id) {
+        return getGuild(id, false) != null;
     }
 
     @Override

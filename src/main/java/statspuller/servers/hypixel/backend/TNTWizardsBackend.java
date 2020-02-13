@@ -35,24 +35,26 @@ public class TNTWizardsBackend extends HypixelBackend<TNTGames> {
     }
 
     @Override
-    public String getExtra(@Nonnull TNTGames games) {
+    public String getExtra(@Nonnull TNTGames games, boolean detailed) {
         String className = games.getWizardsSelectedClass();
-        if (className == null) return "None";
 
-        String name = StringUtils.capitalize(className.replace("new_", "").replace("wizard", ""));
+        String name = className == null ? "Random" : StringUtils.capitalize(className.replace("new_", "").replace("wizard", ""));
 
-        String prefix;
+        String prefix = "§4";
         if (name.contains("Fire")) prefix = "§6";
         else if (name.contains("Ice")) prefix = "§b";
         else if (name.contains("Wither")) prefix = "§8";
         else if (name.contains("Kinetic")) prefix = "§f";
         else if (name.contains("Toxic")) prefix = "§e";
         else if (name.contains("Blood")) prefix = "§c";
-        else prefix = "§d";
+        else if (name.contains ("Hydro")) prefix = "§9";
+        else if (name.contains ("Ancient")) prefix = "§e";
+        else if (name.contains ("Storm")) prefix = "§7";
 
         if (getKills(games) >= 10000) prefix += "§l";
 
-        return prefix + name.trim();
+        String extra = prefix + (detailed ? name.trim() : name.trim().substring(0, 1)); //TODO Upgrades when detailed
+        return extra;
     }
 
     @Override
@@ -73,6 +75,6 @@ public class TNTWizardsBackend extends HypixelBackend<TNTGames> {
                 "\n" +
                 "Class: " + game.getCaptureClass() + "\n" +
                 "Selected Class: " + game.getWizardsSelectedClass() + "\n" +
-                "KDR: " + (game.getKillsCapture() / game.getDeathsCapture());
+                "KDR: " + ((double) game.getKillsCapture() / game.getDeathsCapture());
     }
 }
