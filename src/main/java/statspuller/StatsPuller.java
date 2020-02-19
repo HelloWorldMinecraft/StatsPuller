@@ -89,7 +89,7 @@ public class StatsPuller {
 
     public static Server getServer(String ip) {
         for (Server server : servers) {
-            if (server.isReady() && server.getIP().contains(ip)) return server;
+            if (server.isReady() && ip.contains(server.getIP())) return server;
         }
         return null;
     }

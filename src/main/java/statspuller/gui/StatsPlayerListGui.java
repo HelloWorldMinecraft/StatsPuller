@@ -6,6 +6,7 @@ import com.mojang.authlib.GameProfile;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.monster.EntitySkeleton;
+import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EnumPlayerModelParts;
 import net.minecraft.item.ItemArmor;
@@ -39,7 +40,7 @@ public class StatsPlayerListGui extends GuiPlayerTabOverlay {
                 if (team2 == null && team1 == null) return 0;
                 return team1.getRegisteredName().compareTo(team2.getRegisteredName());
             })
-            .thenComparing(it -> it.getGameProfile().getName()));
+            .thenComparing(it -> it.getGameProfile().getNam e()));
     private final Minecraft mc;
     private final GuiIngame guiIngame;
     private IChatComponent footer;
@@ -255,7 +256,7 @@ public class StatsPlayerListGui extends GuiPlayerTabOverlay {
 
             if (friendGroup.size() > 1) friendGroups.add(friendGroup);
         }
-
+        EntityZombie.is
     }
 
     public List<String> getPlayerInfo(NetworkPlayerInfo player, boolean detailed) {
